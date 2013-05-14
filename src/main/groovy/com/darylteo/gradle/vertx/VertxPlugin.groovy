@@ -30,5 +30,8 @@ class VertxPlugin implements Plugin<Project> {
       apply plugin: VertxProjectPlugin
       apply plugin: VertxModulesPlugin
     }
+    project.subprojects {
+      provided  rootProject
+    }
   }
 }

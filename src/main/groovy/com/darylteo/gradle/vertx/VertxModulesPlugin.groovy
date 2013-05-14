@@ -20,6 +20,7 @@ class VertxModulesPlugin implements Plugin<Project>{
       modules
       explodedModules
 
+      provided.extendsFrom modules
       provided.extendsFrom explodedModules
     }
 
@@ -38,20 +39,6 @@ class VertxModulesPlugin implements Plugin<Project>{
 
   def afterEvaluation(Project project) {
     project.with {
-      // TODO: probably inefficient, but unlikely to be an issue
-      // improve with a map or something later if it does
-      for (def dep in dependentProjects) {
-        if (!dep.state.executed) {
-          println "Deferring final configuration of $project for $dep"
-
-          dep.afterEvaluate {
-            afterEvaluation(project)
-          }
-
-          return
-        }
-      }
-
       // Setting up the classpath for compilation
       configurations.modules.dependencies.each { dep ->
         configurations.modules.files(dep)
@@ -74,10 +61,6 @@ class VertxModulesPlugin implements Plugin<Project>{
 
           compileClasspath += configurations.modules
           compileClasspath += configurations.explodedModules
-
-          compileClasspath.each { entry ->
-            println entry
-          }
         }
       } // end sourceSets
 
