@@ -54,7 +54,12 @@ class VertxModulesPlugin implements Plugin<Project>{
 
       // this task is responsible for extracting all the zip files
       task('installModules', type:Sync, dependsOn: configurations.modules) {
-        doFirst { println "Installing Modules for $project" }
+        doFirst {
+          println "Installing Modules for $project"
+          outputs.files.each { file ->
+            println file.name
+          }
+        }
       }
 
       // Setting up the classpath for compilation
@@ -80,8 +85,11 @@ class VertxModulesPlugin implements Plugin<Project>{
 
             // Configure install modules to install this zip
             installModules {
-              from modZip
-              into rootProject.file(modDir)
+              into 'mods'
+              // child copy-spec
+              into(vertxName){
+                from modZip
+              }
             }
 
             dependencies.explodedModules rootProject.files(modDir)
