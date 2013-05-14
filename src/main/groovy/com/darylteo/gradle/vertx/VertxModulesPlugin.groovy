@@ -52,48 +52,15 @@ class VertxModulesPlugin implements Plugin<Project>{
         }
       }
 
-      // this task is responsible for extracting all the zip files
-      task('installModules', type:Sync, dependsOn: configurations.modules) {
-        doFirst {
-          println "Installing Modules for $project"
-          outputs.files.each { file ->
-            println file.name
-          }
-        }
-      }
-
       // Setting up the classpath for compilation
       configurations.modules.dependencies.each { dep ->
-        def vertxName = "${dep.group}~${dep.name}~${dep.version}"
-
         configurations.modules.files(dep)
           // ignore non zips
           .findAll { file ->
             return file.name.endsWith('.zip')
           }.each { file ->
-            // contents of zip
-            def modZip = rootProject.zipTree(file)
-
-            // destination of exploded zip
-            def modDir = "mods/$vertxName"
-
-            // destination of library jars. installModules will put them there
-            def modLibraries = rootProject.files(modZip
+            dependencies.explodedModules rootProject.zipTree(file)
               .matching { include 'lib/*.jar' }
-              .collect { f -> return "$modDir/lib/$f.name" }
-            ) { builtBy installModules }
-
-            // Configure install modules to install this zip
-            installModules {
-              into 'mods'
-              // child copy-spec
-              into(vertxName){
-                from modZip
-              }
-            }
-
-            dependencies.explodedModules rootProject.files(modDir)
-            dependencies.explodedModules modLibraries
           } // end artifacts .each
 
       } // end dependencies .each
@@ -101,11 +68,16 @@ class VertxModulesPlugin implements Plugin<Project>{
       sourceSets {
         all {
           dependentProjects.each { dependentProject ->
+            compileClasspath += dependentProject.configurations.modules
             compileClasspath += dependentProject.configurations.explodedModules
           }
 
-          compileClasspath -= configurations.modules
+          compileClasspath += configurations.modules
           compileClasspath += configurations.explodedModules
+
+          compileClasspath.each { entry ->
+            println entry
+          }
         }
       } // end sourceSets
 
