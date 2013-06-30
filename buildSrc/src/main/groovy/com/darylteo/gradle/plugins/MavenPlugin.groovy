@@ -18,6 +18,7 @@ package com.darylteo.gradle.plugins
 import org.gradle.api.*
 import org.gradle.api.logging.*
 import org.gradle.api.artifacts.maven.*
+import org.gradle.api.tasks.bundling.*
 
 import com.darylteo.gradle.vertx.tasks.*
 
@@ -42,7 +43,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       install {
         group 'maven'
         description 'Install this artifact into your local maven repository'
-        
+
         doFirst {
           repositories.mavenInstaller {
             configurePom(project, pom);
@@ -75,6 +76,31 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
             }
           }
         }
+      }
+
+      task('sourcesJar', type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        sourceSets.all {  from allSource }
+      }
+
+      artifacts { archives sourcesJar }
+
+      if(tasks.findByName('javadoc')) {
+        task('javadocJar', type: Jar, dependsOn: javadoc) {
+          classifier = 'javadoc'
+          from javadoc.destinationDir
+        }
+
+        artifacts { archives javadocJar }
+      }
+
+      if(tasks.findByName('groovydoc')) {
+        task('groovydocJar', type: Jar, dependsOn: groovydoc) {
+          classifier = 'groovydoc'
+          from groovydoc.destinationDir
+        }
+
+        artifacts { archives groovydocJar }
       }
 
     } // end .with
