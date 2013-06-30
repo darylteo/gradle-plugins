@@ -55,6 +55,12 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         group 'maven'
         description = "Deploys this artifact to your configured maven repository"
 
+        repositories {
+          mavenDeployer {
+            project.maven.pom = pom 
+          }
+        }
+
         doFirst {
           repositories {
             mavenDeployer {
@@ -111,11 +117,11 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       if(maven.name) { pom.artifactId = maven.name }
       if(maven.group) { pom.groupId = maven.group }
       if(maven.version) {
-        if(maven.release) {
-          pom.version = maven.version
-        }else{
-          pom.version = maven.version + '-SNAPSHOT'
-        }
+        pom.version = maven.version
+      }
+
+      if(!maven.release) {
+        pom.version = pom.version + '-SNAPSHOT'
       }
     }
   }

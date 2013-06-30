@@ -1,9 +1,3 @@
-buildscript {
-  repositories {
-    mavenLocal()
-  }
-}
-
 repositories {
   mavenLocal()
   mavenCentral()
@@ -11,22 +5,45 @@ repositories {
 
 subprojects {
   apply plugin: 'groovy'
-  apply plugin: 'maven' 
   apply plugin: com.darylteo.gradle.plugins.MavenPlugin
-  
+
   dependencies {
     compile gradleApi()
     compile localGroovy()
   }
-  
+
   maven {
     group = 'com.darylteo'
     release = project.hasProperty('release') ? project.release : false
-    
+
     username = sonatypeUsername
     password = sonatypePassword
-    
+
     repository = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
     snapshotRepository = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+    project {
+      inceptionYear '2013'
+      url 'http://github.com/darylteo/gradle-plugins'
+
+      scm { url 'http://github.com/darylteo/gradle-plugins' }
+
+      developers {
+        developer {
+          id 'darylteo'
+          name 'Daryl Teo'
+          email 'i.am@darylteo.com'
+        }
+      }
+
+      licenses {
+        license {
+          name 'The Apache Software License, Version 2.0'
+          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          distribution 'repo'
+        }
+      }
+      properties { setProperty('project.build.sourceEncoding', 'UTF8') }
+    }
   }
 }
