@@ -1,0 +1,8 @@
+rootProject.with {
+	task grabMavenPluginSource(type: Sync) {
+		from project.file('../maven-plugin/src/main/groovy')
+		into project.file('src/main/groovy')
+	}
+
+	compileJava.dependsOn grabMavenPluginSource
+}
