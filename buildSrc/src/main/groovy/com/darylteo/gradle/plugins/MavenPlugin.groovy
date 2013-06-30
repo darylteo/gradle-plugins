@@ -117,11 +117,11 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       if(maven.name) { pom.artifactId = maven.name }
       if(maven.group) { pom.groupId = maven.group }
       if(maven.version) {
-        pom.version = maven.version
+        pom.version = "${maven.version}"
       }
 
       if(!maven.release) {
-        pom.version = pom.version + '-SNAPSHOT'
+        pom.version = "${pom.version}-SNAPSHOT"
       }
     }
   }
