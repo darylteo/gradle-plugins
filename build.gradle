@@ -14,7 +14,6 @@ subprojects {
 
   maven {
     group = 'com.darylteo'
-    version = project.version
     release = project.hasProperty('release') ? project.release : false
 
     username = sonatypeUsername
