@@ -10,9 +10,6 @@ class MavenPluginExtension {
   String snapshotRepository = ''
 
   // artifact identifier
-  String group
-  String name
-  String version
   boolean release = false
 
   MavenPom pom

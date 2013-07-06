@@ -13,7 +13,6 @@ subprojects {
   }
 
   maven {
-    group = 'com.darylteo'
     release = project.hasProperty('release') ? project.release : false
 
     username = sonatypeUsername

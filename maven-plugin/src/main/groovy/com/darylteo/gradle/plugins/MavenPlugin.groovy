@@ -85,44 +85,13 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
       }
 
-      task('sourcesJar', type: Jar, dependsOn: classes) {
-        classifier = 'sources'
-        sourceSets.all {  from allSource }
-      }
-
-      artifacts { archives sourcesJar }
-
-      if(tasks.findByName('javadoc')) {
-        task('javadocJar', type: Jar, dependsOn: javadoc) {
-          classifier = 'javadoc'
-          from javadoc.destinationDir
-        }
-
-        artifacts { archives javadocJar }
-      }
-
-      if(tasks.findByName('groovydoc')) {
-        task('groovydocJar', type: Jar, dependsOn: groovydoc) {
-          classifier = 'groovydoc'
-          from groovydoc.destinationDir
-        }
-
-        artifacts { archives groovydocJar }
-      }
-
     } // end .with
   }
 
   void configurePom(def project, def pom) {
     project.with {
-      if(maven.name) { pom.artifactId = maven.name }
-      if(maven.group) { pom.groupId = maven.group }
-      if(maven.version) {
-        pom.version = "${maven.version}"
-      }
-
       if(!maven.release) {
-        pom.version = "${pom.version}-SNAPSHOT"
+        pom.version = "${project.version}-SNAPSHOT"
       }
     }
   }
