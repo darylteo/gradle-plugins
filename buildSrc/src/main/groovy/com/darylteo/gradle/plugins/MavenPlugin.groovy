@@ -45,13 +45,14 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         group 'maven'
         description 'Install this artifact into your local maven repository'
 
-        doFirst {
-          repositories.mavenInstaller {
+
+        repositories.mavenInstaller {
+          afterEvaluate {
             configurePom(project, pom);
           }
         }
       }
-
+      
       uploadArchives {
         group 'maven'
         description = "Deploys this artifact to your configured maven repository"
@@ -62,15 +63,14 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
           }
         }
 
-        doFirst {
-          repositories {
-            mavenDeployer {
-              beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        repositories {
+          mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-              setUniqueVersion(false)
+            setUniqueVersion(false)
 
+            afterEvaluate {
               configuration = configurations.archives
-
               repository(url: maven.repository) {
                 authentication(userName: maven.username, password: maven.password)
               }
