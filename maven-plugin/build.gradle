@@ -3,5 +3,10 @@ group = 'com.darylteo'
 version = '1.1.0'
 
 maven {
-  project { description 'Convenience plugin for Maven related configuration' }
+  project {
+    name 'Maven Plugin' 
+    inceptionYear '2013'
+
+    description 'Convenience plugin for Maven related configuration' 
+  }
 }

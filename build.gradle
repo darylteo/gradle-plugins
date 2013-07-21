@@ -22,7 +22,6 @@ subprojects {
     snapshotRepository = 'https://oss.sonatype.org/content/repositories/snapshots/'
 
     project {
-      inceptionYear '2013'
       url 'http://github.com/darylteo/gradle-plugins'
 
       scm { url 'http://github.com/darylteo/gradle-plugins' }
