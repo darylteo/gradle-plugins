@@ -26,29 +26,38 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
   void apply(Project project) {
     project.with {
       // apply required plugins
-      apply plugin: 'java'
       apply plugin: 'maven'
       apply plugin: 'signing'
 
       // apply conventions and extensions
       project.extensions.create("maven", MavenPluginExtension)
 
-      // maven tasks
-      task('sourcesJar', type: Jar, dependsOn: classes) {
-        classifier = 'sources'
-        sourceSets.all {  from allSource }
-      }
-
-      task('javadocJar', type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
-        from javadoc.destinationDir
-      }
-
       // configure project
       configurations { archives }
 
+      task('sourcesJar', type: Jar) {
+        classifier = 'sources'
+        sourceSets.all { from allSource }
+      }
       artifacts { archives sourcesJar }
-      artifacts { archives javadocJar }
+
+      if(tasks.findByName('javadoc')) {
+        task('javadocJar', type:Jar, dependsOn: javadoc) {
+          classifier = 'javadoc'
+          from javadoc.destinationDir
+        }
+
+        artifacts { archives javadocJar }
+      }
+
+      if(tasks.findByName('groovydoc')) {
+        task('groovydocJar', type:Jar, dependsOn: groovydoc) {
+          classifier = 'groovydoc'
+          from groovydoc.destinationDir
+        }
+        
+        artifacts { archives groovydocJar }
+      }
 
       signing {
         required { maven.release && gradle.taskGraph.hasTask("uploadArchives") }
@@ -102,9 +111,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
   void configurePom(def project, def pom) {
     project.with {
       // executes the configuration closures with the specified pom
-      project.maven.pomConfigClosures?.each { closure ->
-        pom.project closure
-      }
+      project.maven.pomConfigClosures?.each { closure -> pom.project closure }
 
       if(!maven.release) {
         pom.version = "${project.version}-SNAPSHOT"
