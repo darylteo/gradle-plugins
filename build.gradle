@@ -42,10 +42,8 @@ subprojects {
           distribution 'repo'
         }
       }
+
       properties { setProperty('project.build.sourceEncoding', 'UTF8') }
     }
   }
-  
-  
-  
 }

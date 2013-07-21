@@ -12,9 +12,10 @@ class MavenPluginExtension {
   // artifact identifier
   boolean release = false
 
-  MavenPom pom
+  // pom configuration 
+  def pomConfigClosures = []
 
-  void project(Closure closure) {
-    pom.project closure
+  void project(Closure<?> closure) {
+    this.pomConfigClosures += closure
   }
 }

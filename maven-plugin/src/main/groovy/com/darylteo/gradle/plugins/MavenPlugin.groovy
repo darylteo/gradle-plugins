@@ -59,10 +59,11 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         group 'maven'
         description 'Install this artifact into your local maven repository'
 
-
-        repositories.mavenInstaller {
-          afterEvaluate {
-            configurePom(project, pom);
+        repositories {
+          mavenInstaller {
+            afterEvaluate {
+              configurePom(project, pom);
+            }
           }
         }
       }
@@ -70,12 +71,6 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       uploadArchives {
         group 'maven'
         description = "Deploys this artifact to your configured maven repository"
-
-        repositories {
-          mavenDeployer {
-            project.maven.pom = pom
-          }
-        }
 
         repositories {
           mavenDeployer {
@@ -99,11 +94,18 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
       }
 
+
+
     } // end .with
   }
 
   void configurePom(def project, def pom) {
     project.with {
+      // executes the configuration closures with the specified pom
+      project.maven.pomConfigClosures?.each { closure ->
+        pom.project closure
+      }
+
       if(!maven.release) {
         pom.version = "${project.version}-SNAPSHOT"
       }

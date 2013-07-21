@@ -16,8 +16,8 @@
 package com.darylteo.gradle.plugins
 
 import org.gradle.api.*
-import org.gradle.api.logging.*
 import org.gradle.api.artifacts.maven.*
+import org.gradle.api.logging.*
 import org.gradle.api.tasks.bundling.*
 
 import com.darylteo.gradle.vertx.tasks.*
@@ -26,15 +26,29 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
   void apply(Project project) {
     project.with {
       // apply required plugins
-      project.apply plugin: 'java'
-      project.apply plugin: 'maven'
-      project.apply plugin: 'signing'
+      apply plugin: 'java'
+      apply plugin: 'maven'
+      apply plugin: 'signing'
 
       // apply conventions and extensions
       project.extensions.create("maven", MavenPluginExtension)
 
+      // maven tasks
+      task('sourcesJar', type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        sourceSets.all {  from allSource }
+      }
+
+      task('javadocJar', type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+      }
+
       // configure project
       configurations { archives }
+
+      artifacts { archives sourcesJar }
+      artifacts { archives javadocJar }
 
       signing {
         required { maven.release && gradle.taskGraph.hasTask("uploadArchives") }
@@ -45,23 +59,18 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         group 'maven'
         description 'Install this artifact into your local maven repository'
 
-
-        repositories.mavenInstaller {
-          afterEvaluate {
-            configurePom(project, pom);
+        repositories {
+          mavenInstaller {
+            afterEvaluate {
+              configurePom(project, pom);
+            }
           }
         }
       }
-      
+
       uploadArchives {
         group 'maven'
         description = "Deploys this artifact to your configured maven repository"
-
-        repositories {
-          mavenDeployer {
-            project.maven.pom = pom
-          }
-        }
 
         repositories {
           mavenDeployer {
@@ -85,11 +94,18 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
       }
 
+
+
     } // end .with
   }
 
   void configurePom(def project, def pom) {
     project.with {
+      // executes the configuration closures with the specified pom
+      project.maven.pomConfigClosures?.each { closure ->
+        pom.project closure
+      }
+
       if(!maven.release) {
         pom.version = "${project.version}-SNAPSHOT"
       }
