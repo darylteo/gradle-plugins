@@ -45,4 +45,7 @@ subprojects {
       properties { setProperty('project.build.sourceEncoding', 'UTF8') }
     }
   }
+  
+  
+  
 }
