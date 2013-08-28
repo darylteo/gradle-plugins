@@ -4,5 +4,5 @@ rootProject.with {
 		into project.file('src/main/groovy')
 	}
 
-	classes.dependsOn grabMavenPluginSource
+	compileGroovy.dependsOn grabMavenPluginSource
 }

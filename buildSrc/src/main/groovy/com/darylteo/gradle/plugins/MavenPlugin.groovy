@@ -17,6 +17,7 @@ package com.darylteo.gradle.plugins
 
 import org.gradle.api.*
 import org.gradle.api.artifacts.maven.*
+import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.*
 import org.gradle.api.tasks.bundling.*
 
@@ -55,12 +56,12 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
           classifier = 'groovydoc'
           from groovydoc.destinationDir
         }
-        
+
         artifacts { archives groovydocJar }
       }
 
       signing {
-        required { maven.release && gradle.taskGraph.hasTask("uploadArchives") }
+        required { gradle.taskGraph.hasTask(uploadArchives) && !gradle.taskGraph.hasTask(uploadSnapshot) }
         sign configurations.archives
       }
 
@@ -79,7 +80,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
 
       uploadArchives {
         group 'maven'
-        description = "Deploys this artifact to your configured maven repository"
+        description = "Deploys a release of this artifact to your configured maven repository"
 
         repositories {
           mavenDeployer {
@@ -103,7 +104,16 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
       }
 
+      task('uploadSnapshot', dependsOn: uploadArchives) {
+        group = uploadArchives.group
+        description = "Deploys a snapshot this artifact to your configured maven repository"
+      }
 
+      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+        if(graph.hasTask(uploadSnapshot)){
+          project.version = "${project.version}-SNAPSHOT"
+        }
+      }
 
     } // end .with
   }
@@ -112,10 +122,6 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
     project.with {
       // executes the configuration closures with the specified pom
       project.maven.pomConfigClosures?.each { closure -> pom.project closure }
-
-      if(!maven.release) {
-        pom.version = "${project.version}-SNAPSHOT"
-      }
     }
   }
 }
