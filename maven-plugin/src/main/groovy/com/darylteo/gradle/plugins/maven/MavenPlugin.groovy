@@ -27,6 +27,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
   void apply(Project project) {
     project.with {
       // apply required plugins
+      apply plugin: 'java'    // maven plugin requires java plugin for install task to be configured
       apply plugin: 'maven'
       apply plugin: 'signing'
 
