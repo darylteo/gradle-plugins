@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.darylteo.gradle.plugins
+package com.darylteo.gradle.plugins.maven
 
 import org.gradle.api.*
 import org.gradle.api.artifacts.maven.*
@@ -27,11 +27,12 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
   void apply(Project project) {
     project.with {
       // apply required plugins
+      apply plugin: 'java'    // maven plugin requires java plugin for install task to be configured
       apply plugin: 'maven'
       apply plugin: 'signing'
 
       // apply conventions and extensions
-      project.extensions.create("maven", MavenPluginExtension)
+      extensions.add 'maven', new MavenPluginExtension(it)
 
       // configure project
       configurations { archives }
@@ -61,7 +62,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       }
 
       signing {
-        required { gradle.taskGraph.hasTask(uploadArchives) && !gradle.taskGraph.hasTask(uploadSnapshot) }
+        required { project.maven.release }
         sign configurations.archives
       }
 
@@ -104,24 +105,22 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
       }
 
-      task('uploadSnapshot', dependsOn: uploadArchives) {
-        group = uploadArchives.group
-        description = "Deploys a snapshot this artifact to your configured maven repository"
-      }
-
-      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-        if(graph.hasTask(uploadSnapshot)){
-          project.version = "${project.version}-SNAPSHOT"
-        }
-      }
-
     } // end .with
   }
 
-  void configurePom(def project, def pom) {
-    project.with {
-      // executes the configuration closures with the specified pom
-      project.maven.pomConfigClosures?.each { closure -> pom.project closure }
+  void configurePom(def project, MavenPom pom) {
+    MavenPluginExtension maven = project.maven
+    if(maven.groupId){
+      pom.groupId = maven.groupId
     }
+    if(maven.artifactId) {
+      pom.artifactId = maven.artifactId
+    }
+    if(maven.version){
+      pom.version = maven.version
+    }
+
+    // executes the configuration closures with the specified pom
+    maven.pomConfigClosures?.each { closure -> pom.project closure }
   }
 }

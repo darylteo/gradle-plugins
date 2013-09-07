@@ -5,7 +5,7 @@ repositories {
 
 subprojects {
   apply plugin: 'groovy'
-  apply plugin: com.darylteo.gradle.plugins.MavenPlugin
+  apply plugin: com.darylteo.gradle.plugins.maven.MavenPlugin
 
   dependencies {
     compile gradleApi()
@@ -13,14 +13,12 @@ subprojects {
   }
 
   maven {
-    release = project.hasProperty('release') ? project.release : false
-
     username = sonatypeUsername
     password = sonatypePassword
 
     repository = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
     snapshotRepository = 'https://oss.sonatype.org/content/repositories/snapshots/'
-
+   
     project {
       url 'http://github.com/darylteo/gradle-plugins'
 
