@@ -62,7 +62,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       }
 
       signing {
-        required { project.maven.release }
+        required { gradle.taskGraph.hasTask(uploadArchives) && project.maven.release }
         sign configurations.archives
       }
 
