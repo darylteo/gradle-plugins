@@ -77,6 +77,12 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
             }
           }
         }
+
+        doFirst {
+          repositories.mavenInstaller.pom.whenConfigured {
+            println "Installing ${groupId}:${artifactId}:${version}"
+          }
+        }
       }
 
       uploadArchives {
@@ -102,6 +108,19 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
               configurePom(project, pom)
             }
           }
+        }
+      }
+
+      task('version') << {  println "Project '${project.name}' Version '${project.version}'"  }
+
+      task('uploadSnapshot', dependsOn: uploadArchives) {
+        group = uploadArchives.group
+        description = "Deploys a snapshot this artifact to your configured maven repository"
+      }
+
+      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+        if(graph.hasTask(uploadSnapshot) || graph.hasTask(install)){
+          project.version = "${project.version}-SNAPSHOT"
         }
       }
 
