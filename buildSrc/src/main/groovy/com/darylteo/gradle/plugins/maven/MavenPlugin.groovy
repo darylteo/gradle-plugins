@@ -61,11 +61,6 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         artifacts { archives groovydocJar }
       }
 
-      signing {
-        required { project.maven.release }
-        sign configurations.archives
-      }
-
       install {
         group 'maven'
         description 'Install this artifact into your local maven repository'
@@ -79,9 +74,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         }
 
         doFirst {
-          repositories.mavenInstaller.pom.whenConfigured {
-            println "Installing ${groupId}:${artifactId}:${version}"
-          }
+          repositories.mavenInstaller.pom.whenConfigured { println "Installing ${groupId}:${artifactId}:${version}" }
         }
       }
 
@@ -113,13 +106,22 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
 
       task('version') << {  println "Project '${project.name}' Version '${project.version}'"  }
 
+      task('installSnapshot', dependsOn: install) {
+        group = install.group
+        description = "Installs a snapshot this artifact to your local maven repository"
+      }
       task('uploadSnapshot', dependsOn: uploadArchives) {
         group = uploadArchives.group
         description = "Deploys a snapshot this artifact to your configured maven repository"
       }
 
+      signing {
+        required { gradle.taskGraph.hasTask(uploadArchives) && !gradle.taskGraph.hasTask(uploadSnapshot) }
+        sign configurations.archives
+      }
+
       gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-        if(graph.hasTask(uploadSnapshot) || graph.hasTask(install)){
+        if(graph.hasTask(uploadSnapshot) || graph.hasTask(installSnapshot)){
           project.version = "${project.version}-SNAPSHOT"
         }
       }
