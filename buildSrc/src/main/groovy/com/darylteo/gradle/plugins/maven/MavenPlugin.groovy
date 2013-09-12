@@ -32,7 +32,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       apply plugin: 'signing'
 
       // apply conventions and extensions
-      extensions.add 'maven', new MavenPluginExtension(it)
+      extensions.create 'maven', MavenPluginExtension, project
 
       // configure project
       configurations { archives }
