@@ -43,7 +43,7 @@ class MavenPluginExtension {
   void version(String version) {
     this.version = version
   }
-
+  
   public MavenPluginExtension(Project project) {
     this.project = project
   }

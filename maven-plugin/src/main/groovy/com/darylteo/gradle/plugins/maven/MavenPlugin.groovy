@@ -32,7 +32,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       apply plugin: 'signing'
 
       // apply conventions and extensions
-      extensions.add 'maven', new MavenPluginExtension(it)
+      extensions.create 'maven', MavenPluginExtension, project
 
       // configure project
       configurations { archives }
@@ -61,11 +61,6 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         artifacts { archives groovydocJar }
       }
 
-      signing {
-        required { gradle.taskGraph.hasTask(uploadArchives) && project.maven.release }
-        sign configurations.archives
-      }
-
       install {
         group 'maven'
         description 'Install this artifact into your local maven repository'
@@ -76,6 +71,10 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
               configurePom(project, pom);
             }
           }
+        }
+
+        doFirst {
+          repositories.mavenInstaller.pom.whenConfigured { println "Installing ${groupId}:${artifactId}:${version}" }
         }
       }
 
@@ -102,6 +101,28 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
               configurePom(project, pom)
             }
           }
+        }
+      }
+
+      task('version') << {  println "Project '${project.name}' Version '${project.version}'"  }
+
+      task('installSnapshot', dependsOn: install) {
+        group = install.group
+        description = "Installs a snapshot this artifact to your local maven repository"
+      }
+      task('uploadSnapshot', dependsOn: uploadArchives) {
+        group = uploadArchives.group
+        description = "Deploys a snapshot this artifact to your configured maven repository"
+      }
+
+      signing {
+        required { gradle.taskGraph.hasTask(uploadArchives) && !gradle.taskGraph.hasTask(uploadSnapshot) }
+        sign configurations.archives
+      }
+
+      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+        if(graph.hasTask(uploadSnapshot) || graph.hasTask(installSnapshot)){
+          project.version = "${project.version}-SNAPSHOT"
         }
       }
 
