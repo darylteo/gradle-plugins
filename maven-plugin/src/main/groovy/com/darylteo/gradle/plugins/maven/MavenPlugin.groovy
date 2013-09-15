@@ -15,10 +15,12 @@
  */
 package com.darylteo.gradle.plugins.maven
 
+import org.apache.maven.model.Dependency
 import org.gradle.api.*
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.maven.*
-import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.*
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.*
 
 import com.darylteo.gradle.vertx.tasks.*
@@ -28,7 +30,7 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
     project.with {
       // apply required plugins
       apply plugin: 'java'    // maven plugin requires java plugin for install task to be configured
-      apply plugin: 'maven'
+      apply plugin: 'maven-publish'
       apply plugin: 'signing'
 
       // apply conventions and extensions
@@ -37,79 +39,13 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
       // configure project
       configurations { archives }
 
-      task('sourcesJar', type: Jar) {
-        classifier = 'sources'
-        sourceSets.all { from allSource }
-      }
-      artifacts { archives sourcesJar }
-
-      if(tasks.findByName('javadoc')) {
-        task('javadocJar', type:Jar, dependsOn: javadoc) {
-          classifier = 'javadoc'
-          from javadoc.destinationDir
-        }
-
-        artifacts { archives javadocJar }
-      }
-
-      if(tasks.findByName('groovydoc')) {
-        task('groovydocJar', type:Jar, dependsOn: groovydoc) {
-          classifier = 'groovydoc'
-          from groovydoc.destinationDir
-        }
-
-        artifacts { archives groovydocJar }
-      }
-
-      install {
-        group 'maven'
-        description 'Install this artifact into your local maven repository'
-
-        repositories {
-          mavenInstaller {
-            afterEvaluate {
-              configurePom(project, pom);
-            }
-          }
-        }
-
-        doFirst {
-          repositories.mavenInstaller.pom.whenConfigured { println "Installing ${groupId}:${artifactId}:${version}" }
-        }
-      }
-
-      uploadArchives {
-        group 'maven'
-        description = "Deploys a release of this artifact to your configured maven repository"
-
-        repositories {
-          mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            setUniqueVersion(false)
-
-            afterEvaluate {
-              configuration = configurations.archives
-              repository(url: maven.repository) {
-                authentication(userName: maven.username, password: maven.password)
-              }
-
-              snapshotRepository(url: maven.snapshotRepository) {
-                authentication(userName: maven.username, password: maven.password)
-              }
-
-              configurePom(project, pom)
-            }
-          }
-        }
-      }
-
       task('version') << {  println "Project '${project.name}' Version '${project.version}'"  }
 
       task('installSnapshot', dependsOn: install) {
         group = install.group
         description = "Installs a snapshot this artifact to your local maven repository"
       }
+
       task('uploadSnapshot', dependsOn: uploadArchives) {
         group = uploadArchives.group
         description = "Deploys a snapshot this artifact to your configured maven repository"
@@ -120,11 +56,82 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
         sign configurations.archives
       }
 
-      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-        if(graph.hasTask(uploadSnapshot) || graph.hasTask(installSnapshot)){
-          project.version = "${project.version}-SNAPSHOT"
+
+      //
+      //        install {
+      //          group 'maven'
+      //          description 'Install this artifact into your local maven repository'
+      //        }
+      //
+      //        uploadArchives {
+      //          group 'maven'
+      //          description = "Deploys a release of this artifact to your configured maven repository"
+      //
+      //          repositories {
+      //            mavenDeployer {
+      //              beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      //
+      //              setUniqueVersion(false)
+      //
+      //              configuration = configurations.archives
+      //              repository(url: maven.repository) {
+      //                authentication(userName: maven.username, password: maven.password)
+      //              }
+      //
+      //              snapshotRepository(url: maven.snapshotRepository) {
+      //                authentication(userName: maven.username, password: maven.password)
+      //              }
+      //
+      //              configurePom(project, pom)
+      //            }
+      //          }
+      //        }
+
+
+      publishing {
+        def artifacts = []
+        
+        // Configure all required tasks for publishing
+        task('sourcesJar', type: Jar) {
+          classifier = 'sources'
+          sourceSets.all { from allSource }
+        }
+        artifacts += sourcesJar
+
+        if(tasks.findByName('javadoc')) {
+          task('javadocJar', type:Jar, dependsOn: javadoc) {
+            classifier = 'javadoc'
+            from javadoc.destinationDir
+          }
+
+          artifacts += javadocJar
+        }
+
+        if(tasks.findByName('groovydoc')) {
+          task('groovydocJar', type:Jar, dependsOn: groovydoc) {
+            classifier = 'groovydoc'
+            from groovydoc.destinationDir
+          }
+
+          artifacts += groovydocJar
+        }
+
+        publications {
+          java(MavenPublication) {
+            from components.java
+
+            artifacts.each {
+              artifact it 
+            }
+          }
         }
       }
+      //
+      //      gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+      //        if(graph.hasTask(uploadSnapshot) || graph.hasTask(installSnapshot)){
+      //          project.version = "${project.version}-SNAPSHOT"
+      //        }
+      //      }
 
     } // end .with
   }
@@ -143,5 +150,36 @@ public class MavenPlugin implements org.gradle.api.Plugin<Project> {
 
     // executes the configuration closures with the specified pom
     maven.pomConfigClosures?.each { closure -> pom.project closure }
+
+    project.configurations.compile.allDependencies
+      .withType(ProjectDependency)
+      .matching{ dep ->
+        dep.dependencyProject.plugins.hasPlugin(MavenPlugin)
+      }
+      .collect { dep -> dep.dependencyProject }
+      .each { p ->
+        if(p.state.executed) {
+          def depPom = p.uploadArchives.repositories.mavenDeployer.pom.effectivePom
+          def mavenDep = new Dependency()
+          mavenDep.groupId = depPom.groupId
+          mavenDep.artifactId = depPom.artifactId
+          mavenDep.version = depPom.version
+          mavenDep.scope = 'compile'
+
+          pom.dependencies.add(mavenDep)
+        } else {
+          p.afterEvaluate {
+            def depPom = p.uploadArchives.repositories.mavenDeployer.pom.effectivePom
+            def mavenDep = new Dependency()
+            mavenDep.groupId = depPom.groupId
+            mavenDep.artifactId = depPom.artifactId
+            mavenDep.version = depPom.version
+            mavenDep.scope = 'compile'
+
+            pom.dependencies.add(mavenDep)
+          }
+        }
+      }
+
   }
 }
