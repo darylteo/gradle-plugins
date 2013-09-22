@@ -13,34 +13,44 @@ subprojects {
   }
 
   maven {
-    username = sonatypeUsername
-    password = sonatypePassword
+    releases {
+      username sonatypeUsername
+      password sonatypePassword
 
-    repository = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-    snapshotRepository = 'https://oss.sonatype.org/content/repositories/snapshots/'
-   
-    project {
-      url 'http://github.com/darylteo/gradle-plugins'
+      repository 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    }
 
-      scm { url 'http://github.com/darylteo/gradle-plugins' }
+    snapshots {
+      username sonatypeUsername
+      password sonatypePassword
 
-      developers {
-        developer {
-          id 'darylteo'
-          name 'Daryl Teo'
-          email 'i.am@darylteo.com'
+      repository 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+
+    pom {
+      project {
+        url 'http://github.com/darylteo/gradle-plugins'
+
+        scm { url 'http://github.com/darylteo/gradle-plugins' }
+
+        developers {
+          developer {
+            id 'darylteo'
+            name 'Daryl Teo'
+            email 'i.am@darylteo.com'
+          }
         }
-      }
 
-      licenses {
-        license {
-          name 'The Apache Software License, Version 2.0'
-          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-          distribution 'repo'
+        licenses {
+          license {
+            name 'The Apache Software License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution 'repo'
+          }
         }
-      }
 
-      properties { setProperty('project.build.sourceEncoding', 'UTF8') }
+        properties { setProperty('project.build.sourceEncoding', 'UTF8') }
+      }
     }
   }
 }
