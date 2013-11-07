@@ -2,7 +2,7 @@
 
 A Collection of plugins for Gradle
 
-## MavenPlugin
+## MavenPlugin - OBSOLETE pointless plugin
 
 ### Including in your Gradle buildscript.
 

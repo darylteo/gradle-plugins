@@ -1,1 +1,1 @@
-include 'maven-plugin'
+include 'gradle-watcher'

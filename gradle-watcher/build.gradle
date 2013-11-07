@@ -1,0 +1,19 @@
+version = '0.1.0'
+
+dependencies {
+  compile 'com.darylteo:directory-watcher:1.2.0'
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom {
+        project {
+          name 'Gradle Watcher Plugin'
+          description 'Plugin Task that watches for filesystem changes'
+          inceptionYear '2013'
+        }
+      }
+    }
+  }
+}
