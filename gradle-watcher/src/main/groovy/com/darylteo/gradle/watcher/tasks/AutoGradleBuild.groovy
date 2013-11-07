@@ -13,6 +13,8 @@ import com.darylteo.nio.ThreadPoolDirectoryWatchService
 
 class AutoGradleBuild extends DefaultTask {
   def tasks = []
+  def includes = ['src/**']
+  def excludes = []
 
   @TaskAction
   def action() {
@@ -25,7 +27,13 @@ class AutoGradleBuild extends DefaultTask {
     DirectoryWatchService service = new ThreadPoolDirectoryWatchService()
     def watcher = service.newWatcher(project.projectDir.path)
     
-    watcher.include 'src/**'
+    includes?.each { path ->
+      watcher.include path 
+    }
+    
+    excludes?.each { path ->
+      watcher.excludes path
+    }
 
     // setup builder
     // coerce into String array to pass into varargs parameter -> List get caught by the Iterable<> overload
