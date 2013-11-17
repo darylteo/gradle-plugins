@@ -36,11 +36,12 @@ class WatcherTask extends DefaultTask {
     excludes?.each { path -> watcher.excludes path }
 
     // setup builder
-    // coerce into String array to pass into varargs parameter -> List get caught by the Iterable<> overload
-    def tasks = this.tasks instanceof String ? [this.tasks]: this.tasks
-    tasks = tasks.collect { task ->
-      task instanceof Task ? task.name : task
+    // coerce into String array to pass into varargs parameter -> BuildLauncher only accepts the Task from .model package.
+    def tasks = this.tasks.collect { task ->
+      task instanceof Task ? "$task.project.path:$task.name" : task
     } as String[]
+
+    println tasks
 
     BuildLauncher build = connection.newBuild()
       .forTasks(tasks)
