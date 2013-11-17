@@ -9,12 +9,17 @@ import org.gradle.tooling.ProjectConnection
 
 import com.darylteo.nio.DirectoryChangedSubscriber
 import com.darylteo.nio.DirectoryWatchService
-import com.darylteo.nio.ThreadPoolDirectoryWatchService
 
-class AutoGradleBuild extends DefaultTask {
+class WatcherTask extends DefaultTask {
+  boolean block = false
+
   def tasks = []
   def includes = ['src/**']
   def excludes = []
+
+  public WatcherTask() {
+    this.group = null
+  }
 
   @TaskAction
   def action() {
@@ -24,16 +29,11 @@ class AutoGradleBuild extends DefaultTask {
       .connect()
 
     // setup watcher
-    DirectoryWatchService service = new ThreadPoolDirectoryWatchService()
+    DirectoryWatchService service = project.watcher.service
     def watcher = service.newWatcher(project.projectDir.path)
-    
-    includes?.each { path ->
-      watcher.include path 
-    }
-    
-    excludes?.each { path ->
-      watcher.excludes path
-    }
+
+    includes?.each { path -> watcher.include path  }
+    excludes?.each { path -> watcher.excludes path }
 
     // setup builder
     // coerce into String array to pass into varargs parameter -> List get caught by the Iterable<> overload
@@ -52,5 +52,17 @@ class AutoGradleBuild extends DefaultTask {
 
       build.run()
     } as DirectoryChangedSubscriber)
+
+    blockTask()
+  }
+
+  private def blockTask() {
+    if(this.block) {
+      def lock = {}
+
+      synchronized(lock) {
+        lock.wait() // block until Ctrl-C
+      }
+    }
   }
 }
