@@ -5,6 +5,7 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.BuildLauncher
 import org.gradle.tooling.GradleConnector
+import org.gradle.tooling.ProgressListener
 import org.gradle.tooling.ProjectConnection
 
 import com.darylteo.nio.DirectoryChangedSubscriber
@@ -41,10 +42,18 @@ class WatcherTask extends DefaultTask {
       task instanceof Task ? "$task.project.path:$task.name" : task
     } as String[]
 
-    println tasks
-
     BuildLauncher build = connection.newBuild()
       .forTasks(tasks)
+
+    build.addProgressListener({ event ->
+      def description = event.description
+
+      if(description == '') {
+        println "Build Complete"
+      } else {
+        println "Build Event: ${description}"
+      }
+    } as ProgressListener)
 
     watcher.subscribe({ Object[] args ->
       def src, path = args
