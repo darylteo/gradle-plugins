@@ -50,7 +50,12 @@ class WatcherTask extends DefaultTask {
 
       println "File Changed: $path"
 
-      build.run()
+      // Errors must be absorbed else the watcher will crap itself.
+      try {
+        build.run()
+      }catch(Throwable e) {
+        e.printStackTrace()
+      }
     } as DirectoryChangedSubscriber)
 
     blockTask()
