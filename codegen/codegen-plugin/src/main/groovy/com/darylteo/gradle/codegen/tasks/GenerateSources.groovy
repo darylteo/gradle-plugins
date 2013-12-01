@@ -11,7 +11,8 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 
-import com.darylteo.gradle.codegen.generators.GroovyGenerator
+import com.darylteo.gradle.codegen.generators.DefaultGenerator
+import com.darylteo.gradle.codegen.generators.Generator
 
 public class GenerateSources extends DefaultTask {
   @Input
@@ -28,6 +29,8 @@ public class GenerateSources extends DefaultTask {
     this.outputDir = outputDir
   }
 
+  Generator generator = new DefaultGenerator()
+
   public void classFiles(SourceSet ss) {
     if(this.classFiles) {
       this.classFiles.add(project.fileTree(ss.output.classesDir))
@@ -38,7 +41,6 @@ public class GenerateSources extends DefaultTask {
 
   @TaskAction
   public void run() {
-    def generator = new GroovyGenerator()
     File dest = project.file(outputDir)
 
     classFiles.each { File file ->
@@ -47,14 +49,6 @@ public class GenerateSources extends DefaultTask {
       ClassFile classFile = new ClassFile(is)
 
       generator.onClass(classFile)
-
-      classFile.fields.each { FieldInfo field ->
-        generator.onField(field)
-      }
-
-      classFile.methods.each { MethodInfo method ->
-        generator.onMethod(method)
-      }
 
       def fileName = classToPath(classFile)
       def destFile = project.file("$dest/$fileName")
