@@ -1,0 +1,3 @@
+dependencies {
+  compile 'javassist:javassist:3.12.1.GA'
+}
