@@ -1,24 +1,36 @@
 package com.darylteo.gradle.codegen.tasks
 
-import javassist.bytecode.ClassFile
-import javassist.bytecode.FieldInfo
-import javassist.bytecode.MethodInfo
+import javassist.ClassPool
+import javassist.CtClass
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.file.FileCollection
+import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 
 import com.darylteo.gradle.codegen.generators.DefaultGenerator
 import com.darylteo.gradle.codegen.generators.Generator
 
-public class GenerateSources extends DefaultTask {
-  @Input
-  FileCollection classFiles
 
-  private def outputDir = { "$project.buildDir/codegen/groovy" }
+public class GenerateSources extends DefaultTask {
+  /* Source of files to tweak */
+  @Input
+  List sources = []
+
+  /* Classpaths to add to the ClassPool */
+  @Input
+  List classpath = []
+
+  public void from(Project project) {
+    sources.addAll(project.sourceSets*.output.classesDir)
+    classpath.addAll(project.sourceSets*.output.classesDir)
+
+    classpath.addAll(project.configurations.compile?.files)
+  }
+
+  /* Where the files will go */
+  def outputDir = { "$project.buildDir/codegen/groovy" }
 
   @OutputDirectory
   public File getOutputDir() {
@@ -29,41 +41,42 @@ public class GenerateSources extends DefaultTask {
     this.outputDir = outputDir
   }
 
+  /* The generator */
   Generator generator = new DefaultGenerator()
 
-  public void classFiles(SourceSet ss) {
-    if(this.classFiles) {
-      this.classFiles.add(project.fileTree(ss.output.classesDir))
-    } else {
-      this.classFiles = project.fileTree(ss.output.classesDir)
-    }
+  public void setGenerator(def value) {
+    generator = value as Generator
   }
+
+
 
   @TaskAction
   public void run() {
     File dest = project.file(outputDir)
 
-    classFiles.each { File file ->
+    def sourceFiles = sources.collect({ dir ->
+      project.fileTree(dir) { include '**/*.class' }.files
+    }).flatten()
+
+    ClassPool pool = new ClassPool(true)
+    classpath.each { path ->
+      println "$path"
+      pool.appendClassPath("$path")
+    }
+
+    sourceFiles.each { File file ->
       def is = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
+      CtClass clazz = pool.makeClass(is)
 
-      ClassFile classFile = new ClassFile(is)
+      generator.onClass(clazz)
 
-      generator.onClass(classFile)
+      clazz.writeFile(dest.path)
 
-      def fileName = classToPath(classFile)
-      def destFile = project.file("$dest/$fileName")
-      destFile.parentFile.mkdirs()
-      destFile.createNewFile()
-
-      def os = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(destFile)))
-      classFile.write(os)
-
-      os.close()
       is.close()
     }
   }
 
-  protected String classToPath(ClassFile clazz) {
+  protected String classToPath(CtClass clazz) {
     return clazz.name.replace((char)'.', File.separatorChar) + '.class'
   }
 

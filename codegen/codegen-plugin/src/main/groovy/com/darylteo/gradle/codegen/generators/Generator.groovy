@@ -1,7 +1,7 @@
 package com.darylteo.gradle.codegen.generators
 
-import javassist.bytecode.ClassFile
+import javassist.CtClass
 
 public interface Generator {
-  public void onClass(ClassFile file)
+  public void onClass(CtClass clazz)
 }
