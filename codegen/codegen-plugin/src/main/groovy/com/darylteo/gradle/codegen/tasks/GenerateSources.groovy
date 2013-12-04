@@ -52,27 +52,33 @@ public class GenerateSources extends DefaultTask {
 
   @TaskAction
   public void run() {
-    File dest = project.file(outputDir)
-
     def sourceFiles = sources.collect({ dir ->
       project.fileTree(dir) { include '**/*.class' }.files
     }).flatten()
 
+    def generated = []
+
     ClassPool pool = new ClassPool(true)
     classpath.each { path ->
-      println "$path"
       pool.appendClassPath("$path")
     }
+
+    File dest = project.file(outputDir)
+    dest.deleteDir()
+    dest.mkdirs()
 
     sourceFiles.each { File file ->
       def is = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
       CtClass clazz = pool.makeClass(is)
+      is.close()
 
       generator.onClass(clazz)
 
-      clazz.writeFile(dest.path)
+      generated.add(clazz)
+    }
 
-      is.close()
+    generated.each { CtClass clazz ->
+      clazz.writeFile(dest.path)
     }
   }
 
