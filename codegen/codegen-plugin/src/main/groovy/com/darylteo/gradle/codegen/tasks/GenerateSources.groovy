@@ -5,9 +5,9 @@ import javassist.CtClass
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
 import com.darylteo.gradle.codegen.generators.DefaultGenerator
 import com.darylteo.gradle.codegen.generators.Generator
@@ -15,30 +15,40 @@ import com.darylteo.gradle.codegen.generators.Generator
 
 public class GenerateSources extends DefaultTask {
   /* Source of files to tweak */
-  @Input
   List sources = []
 
   /* Classpaths to add to the ClassPool */
-  @Input
   List classpath = []
 
   public void from(Project project) {
-    sources.addAll(project.sourceSets*.output.classesDir)
-    classpath.addAll(project.sourceSets*.output.classesDir)
+    def dirs = project.sourceSets*.output.classesDir
+
+    dirs.each { dir ->
+      sources.add(dir)
+      inputs.dir(dir)
+
+      classpath.add(dir)
+    }
 
     classpath.addAll(project.configurations.compile?.files)
+
+    dependsOn project.tasks.findAll { task -> task.name.startsWith('compile') }
   }
 
   /* Where the files will go */
-  def outputDir = { "$project.buildDir/codegen/groovy" }
+  def outputDir = { "$project.buildDir/codegen" }
 
   @OutputDirectory
   public File getOutputDir() {
     return project.file(outputDir)
   }
 
-  public void setOutputDir(def outputDir) {
-    this.outputDir = outputDir
+  public void setOutputDir(def dir) {
+    this.outputDir = dir
+  }
+
+  public void into(def dir) {
+    this.outputDir = dir
   }
 
   /* The generator */
@@ -48,10 +58,8 @@ public class GenerateSources extends DefaultTask {
     generator = value as Generator
   }
 
-
-
   @TaskAction
-  public void run() {
+  void run(IncrementalTaskInputs inputs) {
     def sourceFiles = sources.collect({ dir ->
       project.fileTree(dir) { include '**/*.class' }.files
     }).flatten()
@@ -80,6 +88,8 @@ public class GenerateSources extends DefaultTask {
     generated.each { CtClass clazz ->
       clazz.writeFile(dest.path)
     }
+
+    setDidWork(true)
   }
 
   protected String classToPath(CtClass clazz) {
