@@ -1,4 +1,4 @@
-package com.darylteo.gradle.codegen.generators
+package com.darylteo.gradle.javassist.generators
 
 import javassist.CtClass
 import javassist.CtField

@@ -1,4 +1,4 @@
-package com.darylteo.gradle.codegen.tasks
+package com.darylteo.gradle.javassist.tasks
 
 import javassist.ClassPool
 import javassist.CtClass

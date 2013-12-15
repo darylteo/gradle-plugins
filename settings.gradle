@@ -1,1 +1,1 @@
-include 'gradle-watcher', 'codegen:codegen-plugin', 'codegen:codegen-annotations'
+include 'gradle-watcher', 'javassist:javassist-plugin'
