@@ -9,30 +9,38 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
-import com.darylteo.gradle.codegen.generators.DefaultGenerator
 import com.darylteo.gradle.codegen.generators.Generator
 
-
-public class GenerateSources extends DefaultTask {
+public class Transformation extends DefaultTask {
   /* Source of files to tweak */
-  List sources = []
+  def sources = []
 
   /* Classpaths to add to the ClassPool */
-  List classpath = []
+  def classpath = []
 
   public void from(Project project) {
     def dirs = project.sourceSets*.output.classesDir
 
     dirs.each { dir ->
-      sources.add(dir)
       inputs.dir(dir)
 
+      sources.add(dir)
       classpath.add(dir)
     }
 
     classpath.addAll(project.configurations.compile?.files)
 
     dependsOn project.tasks.findAll { task -> task.name.startsWith('compile') }
+  }
+
+  public void from(Iterable path) {
+    sources.addAll(path)
+    classpath.addAll(path)
+  }
+
+  public void from(String ... path) {
+    sources.addAll(path)
+    classpath.addAll(path)
   }
 
   /* Where the files will go */
@@ -52,16 +60,17 @@ public class GenerateSources extends DefaultTask {
   }
 
   /* The generator */
-  Generator generator = new DefaultGenerator()
+  List generators = []
 
-  public void setGenerator(def value) {
-    generator = value as Generator
+  public void addGenerator(def value) {
+    this.generators.add(value as Generator)
   }
 
   @TaskAction
   void run(IncrementalTaskInputs inputs) {
-    def sourceFiles = sources.collect({ dir ->
-      project.fileTree(dir) { include '**/*.class' }.files
+    def sourceFiles = (this.sources.collect { src ->
+      src = project.file(src)
+      src.isDirectory() ? project.fileTree(src) { include '**/*.class' }.files : src
     }).flatten()
 
     def generated = []
@@ -75,17 +84,20 @@ public class GenerateSources extends DefaultTask {
     dest.deleteDir()
     dest.mkdirs()
 
-    sourceFiles.each { File file ->
+    sourceFiles.each { def file ->
+      file = project.file(file)
+      if(!file.exists()) {
+        return
+      }
+
       def is = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
       CtClass clazz = pool.makeClass(is)
       is.close()
 
-      generator.onClass(clazz)
+      generators.each { generator ->
+        generator.onClass(clazz)
+      }
 
-      generated.add(clazz)
-    }
-
-    generated.each { CtClass clazz ->
       clazz.writeFile(dest.path)
     }
 
