@@ -6,49 +6,45 @@ public class Transformation {
   def pattern = null
   def action = null
 
+  public Transformation(def action) {
+    this(null, action)
+  }
+
   public Transformation(def pattern, def action) {
     this.pattern = pattern
     this.action = action
   }
 
-  public Transformation save() {
-    this.add({ def c, dir ->
-      println "Saving $c.name to $dir"
-      c.writeFile(dir.toString())
-    })
-  }
-
-  public Transformation create(String name) {
+  public Transformation write() {
     this.add({ c, dir ->
-      def pool = c.classPool
-      return pool.makeClass(name)
+      println "Saving $c.name to $dir"
+      c.writeFile("$dir")
     })
   }
 
   public Transformation edit(Closure action) {
-    this.add({ c, dir -> action(c) })
+    this.add({ c, dir ->
+      action(c)
+    })
   }
 
   def add(Closure action) {
-    def transform = new Transformation(~/.*/, action)
+    def transform = new Transformation(action)
     transforms.add transform
 
     return transform
   }
 
-  def call(def c, def dir) {
-    if(!c.name.matches(this.pattern)) {
-      return
+  def call(def classes, def dir) {
+    def result = []
+
+    classes.findAll ({ c ->
+      return !this.pattern || c.name.matches(this.pattern)
+    }).each { c ->
+      result += action?.call(c,dir)
     }
 
-    if(action) {
-      action(c,dir)
-    }
-
-    transforms.each { t ->
-      t(c, dir)
-    }
-
-    c.writeFile("$dir")
+    result = result.findAll()
+    transforms*.call(result,dir)
   }
 }

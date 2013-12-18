@@ -1,7 +1,5 @@
 import org.gradle.api.tasks.SourceSet
 
-import com.darylteo.gradle.javassist.transforms.Transformation
-
 public class TransformationSpec {
   public def name = "default"
   public def transformations = []
@@ -28,7 +26,7 @@ public class TransformationSpec {
   }
 
   public def matching(def pattern, Closure action) {
-    def transform = new Transformation(pattern, null)
+    def transform = null
     this.transformations.add(transform)
 
     if(action) {

@@ -7,55 +7,83 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
+import com.darylteo.gradle.javassist.transforms.Transformation
+
 public class TransformationTask extends DefaultTask {
   @Input
-  public def spec
+  public def spec = []
+
+  @Input
+  public def transformations = []
 
   @OutputDirectory
-  public def outputDir = { project.file("${project.buildDir}/transformations/${spec.name}/") }
+  public def outputDir = {
+    project.file("${project.buildDir}/transformations/${this.name}/")
+  }
+
+  /* Input Output */ 
+  public void from(def path) {
+    spec += (path as List)
+  }
+
+  public void into(def path) {
+    this.outputDir = path
+  }
+
+  /* Selectors */
+  public def all(Closure action) {
+    // defer resolution of outputDir until run
+    def transform = new Transformation({ c, dir ->
+      action?.call(c)
+    })
+    transformations += transform
+
+    return transform
+  }
+
 
   @TaskAction
   def run() {
-    println "Begin $spec.name transformation"
-
     def parent = new ClassPool(true)
     def output = project.file(outputDir)
     output.mkdirs()
 
     // set up the classpath for the classpool
-    spec.classpath.each { cp ->
-      parent.appendClassPath(project.file(cp).toString())
+    project.configurations.compile.files.each { cp ->
+      parent.appendClassPath("$cp")
     }
 
-    spec.sources.each { dir ->
-      parent.appendClassPath(dir.toString())
+    spec.each { dir ->
+      parent.appendClassPath("$dir")
     }
 
     // identify all the classes we're manipulating (only those in the sources)
-    def classes = spec.sources.collect({ dir ->
-      project.fileTree(dir, { include '**/*.class' }).files
-    })
-    .flatten()
-    .collect({ file ->
-      project.file(file)
-    })
-    .findAll({ file ->
-      file.exists()
-    })
-    .collect({ file ->
-      def is = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
-      def clazz = parent.makeClass(is)
-      is.close()
+    def classNames = spec
+      .flatten()
+      .collect({ dir ->
+        project.fileTree("$dir", { include '**/*.class' }) as List
+      })
+      .flatten()
+      .collect({ file ->
+        if(!file.exists()) {
+          return null
+        }
 
-      return clazz.name
-    })
+        def is = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
+        def clazz = parent.makeClass(is)
+        is.close()
+
+        return clazz.name
+      })
+      .findAll()
 
     // perform transformations. set up a temporary class pool so that each set of transformations are independent
-    spec.transformations.each { t ->
-      classes.each { name ->
-        def clazz = parent.get(name)
-        t(clazz, output)
-      }
+    transformations.each { t ->
+      def classes = classNames.collect({ name ->
+        parent.get(name)
+      })
+
+      t(classes, output)
     }
   }
 }
