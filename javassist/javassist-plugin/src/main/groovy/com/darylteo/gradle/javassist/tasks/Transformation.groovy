@@ -1,4 +1,4 @@
-package com.darylteo.gradle.javassist.transforms
+package com.darylteo.gradle.javassist.tasks
 
 public class Transformation {
   def transforms = []
@@ -17,7 +17,6 @@ public class Transformation {
 
   public Transformation write() {
     this.add({ c, dir ->
-      println "Saving $c.name to $dir"
       c.writeFile("$dir")
     })
   }

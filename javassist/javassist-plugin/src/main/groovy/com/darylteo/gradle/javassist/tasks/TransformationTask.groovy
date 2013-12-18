@@ -7,7 +7,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
-import com.darylteo.gradle.javassist.transforms.Transformation
 
 public class TransformationTask extends DefaultTask {
   @Input
