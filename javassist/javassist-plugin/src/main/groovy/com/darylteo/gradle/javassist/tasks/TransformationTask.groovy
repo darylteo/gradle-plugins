@@ -64,7 +64,14 @@ public class TransformationTask extends DefaultTask {
     def classNames = spec
       .flatten()
       .collect({ dir ->
-        project.fileTree("$dir", { include '**/*.class' }) as List
+        def list
+        if(dir.name.matches(~/^.*\.(jar|zip)$/)) {
+          list = project.zipTree(dir)
+        } else {
+          list = project.fileTree(dir)
+        }
+
+        return (list.matching({ include '**/*.class' })) as List
       })
       .flatten()
       .collect({ file ->
