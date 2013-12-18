@@ -1,3 +1,18 @@
 subprojects {
-  version = '0.1.0'  
+  version = '0.1.0'
+
+  uploadArchives {
+    repositories {
+      mavenDeployer {
+        pom {
+          project {
+            name 'Javassist Plugin'
+            description 'Plugin Task that faciliates Javassist bytecode generation'
+            inceptionYear '2013'
+          }
+        }
+      }
+    }
+  }
+
 }
