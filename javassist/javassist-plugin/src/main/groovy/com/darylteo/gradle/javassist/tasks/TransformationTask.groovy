@@ -16,9 +16,7 @@ public class TransformationTask extends DefaultTask {
   public def transformations = []
 
   @OutputDirectory
-  public def outputDir = {
-    project.file("${project.buildDir}/transformations/${this.name}/")
-  }
+  def File outputDir
 
   /* Input Output */ 
   public void from(def path) {
@@ -26,7 +24,7 @@ public class TransformationTask extends DefaultTask {
   }
 
   public void into(def path) {
-    this.outputDir = path
+    this.outputDir = project.file(path)
   }
 
   /* Selectors */
@@ -40,11 +38,17 @@ public class TransformationTask extends DefaultTask {
     return transform
   }
 
+  public TransformationTask() {
+    this.outputDir = project.file("${project.buildDir}/transformations/${this.name}")
+
+    this.inputs.property('spec', { this.spec })
+    this.outputs.dir({ this.outputDir })
+  }
 
   @TaskAction
   def run() {
     def parent = new ClassPool(true)
-    def output = project.file(outputDir)
+    def output = this.outputDir
     output.mkdirs()
 
     // set up the classpath for the classpool
