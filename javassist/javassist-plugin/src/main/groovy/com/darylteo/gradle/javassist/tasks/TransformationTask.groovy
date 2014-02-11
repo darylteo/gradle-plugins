@@ -10,7 +10,7 @@ import org.gradle.api.tasks.TaskAction
 
 public class TransformationTask extends DefaultTask {
   @Input
-  public def spec = []
+  public def sources = []
 
   @Input
   public def transformations = []
@@ -18,9 +18,21 @@ public class TransformationTask extends DefaultTask {
   @OutputDirectory
   def File outputDir
 
-  /* Input Output */ 
+  /* Constructor */
+  public TransformationTask() {
+    this.outputDir = project.file("${project.buildDir}/transformations/${this.name}")
+
+    this.inputs.property('sources', { this.sources })
+    this.outputs.dir({ this.outputDir })
+
+    this.from(project.sourceSets*.output.files)
+
+    this.dependsOn project.sourceSets*.classesTaskName
+  }
+
+  /* Input Output */
   public void from(def path) {
-    spec += (path as List)
+    sources += (path as List)
   }
 
   public void into(def path) {
@@ -28,9 +40,9 @@ public class TransformationTask extends DefaultTask {
   }
 
   /* Selectors */
-  public def all(Closure action) {
+  public def transform(def pattern = null, Closure action) {
     // defer resolution of outputDir until run
-    def transform = new Transformation({ c, dir ->
+    def transform = new Transformation(pattern, { c, dir -> 
       action?.call(c)
     })
     transformations += transform
@@ -38,13 +50,7 @@ public class TransformationTask extends DefaultTask {
     return transform
   }
 
-  public TransformationTask() {
-    this.outputDir = project.file("${project.buildDir}/transformations/${this.name}")
-
-    this.inputs.property('spec', { this.spec })
-    this.outputs.dir({ this.outputDir })
-  }
-
+  /* Task Action */
   @TaskAction
   def run() {
     def parent = new ClassPool(true)
@@ -56,12 +62,12 @@ public class TransformationTask extends DefaultTask {
       parent.appendClassPath("$cp")
     }
 
-    spec.each { dir ->
+    sources.each { dir ->
       parent.appendClassPath("$dir")
     }
 
     // identify all the classes we're manipulating (only those in the sources)
-    def classNames = spec
+    def classNames = sources
       .flatten()
       .collect({ dir ->
         def list

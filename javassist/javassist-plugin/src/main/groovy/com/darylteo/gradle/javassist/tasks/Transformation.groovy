@@ -6,6 +6,10 @@ public class Transformation {
   def pattern = null
   def action = null
 
+  public Transformation() {
+    this(null, null)
+  }
+
   public Transformation(def action) {
     this(null, action)
   }

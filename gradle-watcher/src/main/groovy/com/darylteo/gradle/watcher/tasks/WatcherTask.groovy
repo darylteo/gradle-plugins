@@ -45,16 +45,6 @@ class WatcherTask extends DefaultTask {
     BuildLauncher build = connection.newBuild()
       .forTasks(tasks)
 
-    build.addProgressListener({ event ->
-      def description = event.description
-
-      if(description == '') {
-        println "Build Complete"
-      } else {
-        println "Build Event: ${description}"
-      }
-    } as ProgressListener)
-
     watcher.subscribe({ Object[] args ->
       def src, path = args
 
