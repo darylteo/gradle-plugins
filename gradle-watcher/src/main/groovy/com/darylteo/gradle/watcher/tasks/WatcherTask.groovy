@@ -5,7 +5,6 @@ import com.darylteo.nio.DirectoryWatchService
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
-import org.gradle.tooling.BuildLauncher
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
 import org.joda.time.Instant
@@ -18,24 +17,21 @@ class WatcherTask extends DefaultTask {
   def includes = ['src/**']
   def excludes = []
 
-  /**
-   * how long to wait for changes to settle before triggering a build in seconds
-   */
-  def delay = 2
+  def runImmediately = false
 
-  def _timer
-  def _lastChange
+  // private vars
+  def _changed = true
 
   def _builder
-  def _running
+  def _mutex = new Object()
 
   public WatcherTask() {
     this.group = null
   }
 
   @TaskAction
-  def action() {
-    _timer = new Timer()
+  public def action() {
+    _changed = runImmediately
 
     // setup project connection
     ProjectConnection connection = GradleConnector.newConnector()
@@ -46,7 +42,7 @@ class WatcherTask extends DefaultTask {
     DirectoryWatchService service = project.watcher.service
     def watcher = service.newWatcher(project.projectDir.path)
 
-    includes?.each { path -> watcher.include path  }
+    includes?.each { path -> watcher.include path }
     excludes?.each { path -> watcher.excludes path }
 
     // setup builder
@@ -59,51 +55,47 @@ class WatcherTask extends DefaultTask {
       .forTasks(tasks)
 
     watcher.subscribe({ Object[] args ->
-      def src, path = args
-      _lastChange = new Instant()
-
-      if(!_running) {
-        _scheduleBuild()
+      if (!_changed) {
+        _changed = true
+        synchronized (_mutex) {
+          _mutex.notifyAll()
+        }
       }
     } as DirectoryChangedSubscriber)
 
-    blockTask()
+    _scheduleBuild()
+    _blockTask()
   }
 
   def _scheduleBuild() {
-    def currentTask = {
-      def lastKnownChange = _lastChange;
+    Thread.start {
+      while (1) {
+        synchronized (_mutex) {
+          if (!_changed) {
+            _mutex.wait()
+            continue
+          }
+        }
 
-      // ensure there haven't been any more recent changes
-      def elapsed = new Interval(lastKnownChange, new Instant())
-      if (elapsed.toDurationMillis() < (delay * 1000)) {
-        return
+        // the value of this could be changed by a separate ping
+        _changed = false
+
+        try {
+          // Errors must be absorbed else the watcher will crap itself.
+          _running = true
+          _builder.run()
+        } catch (Throwable e) {
+          e.printStackTrace()
+        }
       }
-
-      try {
-        // Errors must be absorbed else the watcher will crap itself.
-        _running = true
-        _builder.run()
-      } catch (Throwable e) {
-        e.printStackTrace()
-      } finally {
-        _running = false
-      }
-
-      // check if a change occurred during the build
-      if(!lastKnownChange.equals(_lastChange)) {
-        _scheduleBuild()
-      }
-    } as TimerTask
-
-    _timer.schedule(currentTask, delay * 1000)
+    }
   }
 
-  private def blockTask() {
-    if(this.block) {
+  def _blockTask() {
+    if (this.block) {
       def lock = {}
 
-      synchronized(lock) {
+      synchronized (lock) {
         lock.wait() // block until Ctrl-C
       }
     }
