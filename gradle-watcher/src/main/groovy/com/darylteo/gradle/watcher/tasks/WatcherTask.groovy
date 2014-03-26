@@ -7,8 +7,6 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
-import org.joda.time.Instant
-import org.joda.time.Interval
 
 class WatcherTask extends DefaultTask {
   boolean block = true
