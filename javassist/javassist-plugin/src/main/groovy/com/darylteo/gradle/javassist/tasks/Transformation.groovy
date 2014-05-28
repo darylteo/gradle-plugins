@@ -3,7 +3,7 @@ package com.darylteo.gradle.javassist.tasks
 public class Transformation {
   def transforms = []
 
-  def pattern = null
+  def filter = null
   def action = null
 
   public Transformation() {
@@ -14,8 +14,8 @@ public class Transformation {
     this(null, action)
   }
 
-  public Transformation(def pattern, def action) {
-    this.pattern = pattern
+  public Transformation(def filter, def action) {
+    this.filter = filter
     this.action = action
   }
 
@@ -40,9 +40,15 @@ public class Transformation {
 
   def call(def classes, def dir) {
     def result = []
+    def filtered = this.classes
 
+    if(this.filter != null) {
+      filtered = filtered.findAll { c ->
+        this.filter.call(c)
+      }
+    }
     classes.findAll ({ c ->
-      return !this.pattern || c.name.matches(this.pattern)
+      return !this.filter || c.name.matches(this.filter)
     }).each { c ->
       result += action?.call(c,dir)
     }
