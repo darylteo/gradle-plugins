@@ -6,6 +6,7 @@ import com.darylteo.gradle.javassist.transformers.ClosureBackedClassTransformati
 import groovy.lang.Closure;
 import javassist.CtClass;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class Transformation {
     return child;
   }
 
-  public void call(List<CtClass> classes, String dir) throws Exception {
+  public void call(List<CtClass> classes, File dir) throws Exception {
     List<CtClass> result = new LinkedList<CtClass>();
 
     for (CtClass c : classes) {

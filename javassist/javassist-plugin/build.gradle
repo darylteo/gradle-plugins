@@ -1,3 +1,21 @@
+apply from: rootProject.file('plugin.gradle')
+
+version = '0.2.0'
+
 dependencies {
   compile 'org.javassist:javassist:3.18.1-GA'
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom {
+        project {
+          name 'Javassist Plugin'
+          description 'Plugin Task that faciliates Javassist bytecode generation'
+          inceptionYear '2013'
+        }
+      }
+    }
+  }
 }

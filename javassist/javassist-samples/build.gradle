@@ -1,0 +1,16 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+
+  dependencies {
+    classpath 'com.darylteo.gradle:javassist-plugin:0.2.0'
+  }
+}
+
+import com.darylteo.gradle.javassist.tasks.TransformationTask
+
+task transform1(type: TransformationTask) {
+
+}
