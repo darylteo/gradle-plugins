@@ -1,1 +1,1 @@
-include 'gradle-watcher', 'javassist:javassist-plugin', 'javassist:javassist-samples'
+include 'gradle-watcher', 'javassist:javassist-plugin'
