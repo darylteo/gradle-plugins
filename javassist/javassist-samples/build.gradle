@@ -16,4 +16,9 @@ apply plugin: 'java'
 task transform1(type: TransformationTask) {
   from sourceSets.main.output
   into("${buildDir}/transforms/transform1")
+
+  transform { c ->
+    println c
+  }
+
 }

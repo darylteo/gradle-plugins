@@ -23,12 +23,15 @@ import java.util.List;
 class TransformationAction implements CopyAction {
 
   private String destinationDir;
+
   private ClassTransformation transformation;
+
   private List<File> sources = new LinkedList<>();
 
   public TransformationAction(String destinationDir, Collection<File> sources, ClassTransformation transformation) {
     this.destinationDir = destinationDir;
     this.sources.addAll(sources);
+
     this.transformation = transformation;
   }
 
@@ -60,12 +63,15 @@ class TransformationAction implements CopyAction {
   // preloads all class files into the classpool and stores a list of class names
   private class LoaderAction implements CopyActionProcessingStreamAction {
     private final ClassPool pool;
+
     private ClassTransformation transformation;
+
     private final String destinationDir;
 
     public LoaderAction(ClassPool pool, String destinationDir, ClassTransformation transformation) {
       this.pool = pool;
       this.destinationDir = destinationDir;
+
       this.transformation = transformation;
     }
 
@@ -85,7 +91,9 @@ class TransformationAction implements CopyAction {
     }
 
     private void transformClass(CtClass clazz) throws Exception {
-      this.transformation.applyTransformations(clazz);
+      if (this.transformation.filter(clazz)) {
+        this.transformation.applyTransformations(clazz);
+      }
     }
 
     private CtClass loadClassFile(File classFile) throws IOException {
