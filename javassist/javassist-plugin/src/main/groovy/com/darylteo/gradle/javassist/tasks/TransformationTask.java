@@ -3,9 +3,11 @@ package com.darylteo.gradle.javassist.tasks;
 import com.darylteo.gradle.javassist.transformers.ClassTransformation;
 import com.darylteo.gradle.javassist.transformers.GroovyClassTransformation;
 import groovy.lang.Closure;
-import javassist.CtClass;
 import org.gradle.api.internal.file.copy.CopyAction;
+import org.gradle.api.internal.file.copy.CopyActionProcessingStream;
+import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.tasks.AbstractCopyTask;
+import org.gradle.api.tasks.WorkResult;
 
 public class TransformationTask extends AbstractCopyTask {
 
@@ -40,16 +42,21 @@ public class TransformationTask extends AbstractCopyTask {
   }
 
   public TransformationTask() {
-    this.transformation = new ClassTransformation() {
-      @Override
-      public void applyTransformations(CtClass clazz) throws Exception {
-        System.out.println("No transformations applied to this task.");
-      }
-    };
   }
 
   @Override
   protected CopyAction createCopyAction() {
+    // no op if no transformation defined
+    if (this.transformation == null) {
+      return new CopyAction() {
+        @Override
+        public WorkResult execute(CopyActionProcessingStream copyActionProcessingStream) {
+          System.out.println("No transformation defined for this task");
+          return new SimpleWorkResult(false);
+        }
+      };
+    }
+
     String dir = this.destinationDir;
     if (dir == null) {
       dir = String.format("%s/transformations/%s", this.getProject().getBuildDir(), this.getName());

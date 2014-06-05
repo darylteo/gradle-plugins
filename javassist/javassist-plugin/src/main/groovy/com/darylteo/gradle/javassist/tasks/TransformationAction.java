@@ -81,18 +81,14 @@ class TransformationAction implements CopyAction {
         if (!details.isDirectory()) {
           CtClass clazz = loadClassFile(details.getFile());
 
-          clazz.defrost();
-          transformClass(clazz);
-          clazz.writeFile(this.destinationDir);
+          if (this.transformation.filter(clazz)) {
+            clazz.defrost();
+            this.transformation.applyTransformations(clazz);
+            clazz.writeFile(this.destinationDir);
+          }
         }
       } catch (Exception e) {
         throw new GradleException("An error occurred while trying to process class file ", e);
-      }
-    }
-
-    private void transformClass(CtClass clazz) throws Exception {
-      if (this.transformation.filter(clazz)) {
-        this.transformation.applyTransformations(clazz);
       }
     }
 
@@ -105,32 +101,6 @@ class TransformationAction implements CopyAction {
       stream.close();
 
       return clazz;
-    }
-  }
-
-  private class StreamAction implements CopyActionProcessingStreamAction {
-    private final ClassPool pool;
-
-    public StreamAction(ClassPool pool) {
-      this.pool = pool;
-    }
-
-    @Override
-    public void processFile(FileCopyDetailsInternal file) {
-      if (!file.isDirectory()) {
-        File f = file.getFile();
-//
-//        try {
-//          // now we just process the class we just read
-//          processClass(pool.get(clazz.getName()));
-//        } catch (Exception e) {
-//          throw new GradleException("Failed to write class file", e);
-//        }
-      }
-    }
-
-    private void processClass(CtClass clazz) throws Exception {
-      clazz.writeFile(destinationDir);
     }
   }
 }
