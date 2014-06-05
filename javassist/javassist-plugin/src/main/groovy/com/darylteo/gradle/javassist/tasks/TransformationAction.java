@@ -1,5 +1,6 @@
 package com.darylteo.gradle.javassist.tasks;
 
+import com.darylteo.gradle.javassist.transformers.ClassTransformation;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
@@ -22,18 +23,20 @@ import java.util.List;
 class TransformationAction implements CopyAction {
 
   private String destinationDir;
+  private ClassTransformation transformation;
   private List<File> sources = new LinkedList<>();
 
-  public TransformationAction(String destinationDir, Collection<File> sources) {
+  public TransformationAction(String destinationDir, Collection<File> sources, ClassTransformation transformation) {
     this.destinationDir = destinationDir;
     this.sources.addAll(sources);
+    this.transformation = transformation;
   }
 
   @Override
   public WorkResult execute(CopyActionProcessingStream stream) {
     try {
       final ClassPool pool = createPool(this.sources);
-      final LoaderAction action = new LoaderAction(pool, destinationDir);
+      final LoaderAction action = new LoaderAction(pool, destinationDir, this.transformation);
 
       stream.process(action);
     } catch (Exception e) {
@@ -57,11 +60,13 @@ class TransformationAction implements CopyAction {
   // preloads all class files into the classpool and stores a list of class names
   private class LoaderAction implements CopyActionProcessingStreamAction {
     private final ClassPool pool;
+    private ClassTransformation transformation;
     private final String destinationDir;
 
-    public LoaderAction(ClassPool pool, String destinationDir) {
+    public LoaderAction(ClassPool pool, String destinationDir, ClassTransformation transformation) {
       this.pool = pool;
       this.destinationDir = destinationDir;
+      this.transformation = transformation;
     }
 
     @Override
@@ -70,15 +75,17 @@ class TransformationAction implements CopyAction {
         if (!details.isDirectory()) {
           CtClass clazz = loadClassFile(details.getFile());
 
-          System.out.println(clazz.isFrozen());
           clazz.defrost();
-          System.out.println(clazz.isFrozen());
-          System.out.println("Trying to write File: " + this.destinationDir);
+          transformClass(clazz);
           clazz.writeFile(this.destinationDir);
         }
       } catch (Exception e) {
-        throw new GradleException("An error occurred while trying to load class file ", e);
+        throw new GradleException("An error occurred while trying to process class file ", e);
       }
+    }
+
+    private void transformClass(CtClass clazz) throws Exception {
+      this.transformation.applyTransformations(clazz);
     }
 
     private CtClass loadClassFile(File classFile) throws IOException {
@@ -86,6 +93,7 @@ class TransformationAction implements CopyAction {
       // much easier than trying to extrapolate from the filename (i.e. with anonymous classes etc.)
       InputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(classFile)));
       CtClass clazz = pool.makeClass(stream);
+
       stream.close();
 
       return clazz;

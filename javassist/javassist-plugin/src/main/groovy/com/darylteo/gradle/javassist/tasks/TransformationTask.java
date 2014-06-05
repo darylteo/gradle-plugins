@@ -1,7 +1,7 @@
 package com.darylteo.gradle.javassist.tasks;
 
-import org.gradle.api.Action;
-import org.gradle.api.Project;
+import com.darylteo.gradle.javassist.transformers.ClassTransformation;
+import javassist.CtClass;
 import org.gradle.api.internal.file.copy.CopyAction;
 import org.gradle.api.tasks.AbstractCopyTask;
 
@@ -15,6 +15,16 @@ public class TransformationTask extends AbstractCopyTask {
 
   public void setDestinationDir(String destinationDir) {
     this.destinationDir = destinationDir;
+  }
+
+  private ClassTransformation transformation;
+
+  public ClassTransformation getTransformation() {
+    return transformation;
+  }
+
+  public void setTransformation(ClassTransformation transformation) {
+    this.transformation = transformation;
   }
 
   //  @Input
@@ -141,14 +151,11 @@ public class TransformationTask extends AbstractCopyTask {
 
 
   public TransformationTask() {
-    final Project project = this.getProject();
-    final TransformationTask _this = this;
-
-    project.afterEvaluate(new Action<Project>() {
+    this.transformation = new ClassTransformation() {
       @Override
-      public void execute(Project project) {
+      public void applyTransformations(CtClass clazz) throws Exception {
       }
-    });
+    };
   }
 
   @Override
@@ -157,7 +164,7 @@ public class TransformationTask extends AbstractCopyTask {
     if (dir == null) {
       dir = String.format("%s/transformations/%s", this.getProject().getBuildDir(), this.getName());
     }
-    return new TransformationAction(dir, this.getSource().getFiles());
+    return new TransformationAction(dir, this.getSource().getFiles(), this.transformation);
   }
 
 }
