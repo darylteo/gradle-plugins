@@ -10,15 +10,55 @@ buildscript {
 }
 
 import com.darylteo.gradle.javassist.tasks.TransformationTask
+import com.darylteo.gradle.javassist.transformers.ClassTransformation
+import javassist.CtClass
 
 apply plugin: 'java'
 
+class MyTransformation extends ClassTransformation {
+  @Override
+  public void applyTransformations(CtClass clazz) throws Exception {
+    clazz.setName("test.package." + clazz.getName());
+  }
+
+  @Override
+  public boolean filter(CtClass clazz) {
+    return clazz.getName().equals("MyClass2");
+  }
+}
+
+// transformation empty
 task transform1(type: TransformationTask) {
+  from sourceSets.main.output
+  into("${buildDir}/transforms/transform1")
+}
+
+// transformation
+task transform2(type: TransformationTask) {
   from sourceSets.main.output
   into("${buildDir}/transforms/transform1")
 
   transform { c ->
-    println c
+    c.name = "test.package.${c.name}"
   }
+}
 
+// transformation with filter
+task transform3(type: TransformationTask) {
+  from sourceSets.main.output
+  into("${buildDir}/transforms/transform1")
+
+  where { c ->
+    c.name == 'MyClass2'
+  }.transform { c ->
+    c.name = "test.package.${c.name}"
+  }
+}
+
+// transformation with transformation class
+task transform4(type: TransformationTask) {
+  from sourceSets.main.output
+  into("${buildDir}/transforms/transform1")
+
+  transformation = new MyTransformation()
 }

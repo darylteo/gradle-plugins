@@ -10,8 +10,14 @@ public class GroovyClassTransformation extends ClassTransformation {
   private Closure transform;
   private Closure filter;
 
-  public GroovyClassTransformation(Closure closure) {
-    this.transform = closure;
+  public GroovyClassTransformation(Closure transform) {
+    this.transform = transform;
+    this.filter = null;
+  }
+
+  public GroovyClassTransformation(Closure transform, Closure filter) {
+    this.transform = transform;
+    this.filter = filter;
   }
 
   @Override

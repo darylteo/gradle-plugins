@@ -29,8 +29,14 @@ public class TransformationTask extends AbstractCopyTask {
     this.transformation = transformation;
   }
 
-  public void transform(Closure closure) {
+  public ClassTransformation transform(Closure closure) {
     this.transformation = new GroovyClassTransformation(closure);
+    return this.transformation;
+  }
+
+  public ClassTransformation where(Closure closure) {
+    this.transformation = new GroovyClassTransformation(null, closure);
+    return this.transformation;
   }
 
   public TransformationTask() {
