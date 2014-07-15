@@ -1,6 +1,6 @@
 apply from: rootProject.file('plugin.gradle')
 
-version = '0.1.2'
+version = '0.1.3'
 
 dependencies {
   compile 'com.darylteo:directory-watcher:1.2.0'
@@ -18,4 +18,8 @@ uploadArchives {
       }
     }
   }
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.0'
 }

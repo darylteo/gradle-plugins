@@ -15,7 +15,7 @@ buildscript {
 	}
 }
 
-import com.darylteo.gradle.watcher.tasks.WatcherTask
+import WatcherTask
 
 apply plugin: 'java'
 apply plugin: 'watcher'
